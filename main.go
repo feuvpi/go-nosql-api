@@ -3,31 +3,27 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/feuvpi/go-nosql-api/handlers"
+	"github.com/feuvpi/go-nosql-api/database"
 )
 
-var db *mongo.Database
+// var db *mongo.Database
 
 func main() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	client, db, err := database.Connect("mongodb://localhost:27017", "mydb")
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = client.Ping(context.TODO(), nil)
+	defer client.Disconnect(context.Background())
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Connected to MongoDB!")
-
-	db = client.Database("mydb")
-
+	// -- setup routes
 	router := mux.NewRouter()
 	router.HandleFunc("/listings", getListings).Methods("GET")
 	router.HandleFunc("/users", getUsers).Methods("GET")

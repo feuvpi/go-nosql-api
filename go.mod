@@ -1,4 +1,4 @@
-module github.com/your-username/mongodb-api
+module github.com/feuvpi/go-nosql-api
 
 go 1.23
 
