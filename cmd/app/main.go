@@ -9,10 +9,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/feuvpi/go-nosql-api/handlers"
-	"github.com/feuvpi/go-nosql-api/database"
+	"github.com/feuvpi/go-nosql-api/internal"
 )
 
-// var db *mongo.Database
+var listingsService *services.ListingsService
+var usersService *services.UsersService
 
 func main() {
 	client, db, err := database.Connect("mongodb://localhost:27017", "mydb")
@@ -22,6 +23,12 @@ func main() {
 	}
 
 	defer client.Disconnect(context.Background())
+
+	listingsDB := database.NewListingsDatabase(db)
+	usersDB := database.NewUsersDatabase(db)
+
+	listingsService = services.NewListingsService(listingsDB)
+	usersService = services.NewUsersService(usersDB)
 
 	// -- setup routes
 	router := mux.NewRouter()

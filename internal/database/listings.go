@@ -37,3 +37,40 @@ func (db *ListingsDatabase) GetAll() ([]models.Listing, error) {
 	}
 	return listings, nil
 }
+
+func (db *ListingsDatabase) GetByID(id primitive.ObjectID) (models.Listing, error) {
+	filter := bson.M{"_id": id}
+	var listing models.Listing
+	err := db.collection.FindOne(context.TODO(), filter).Decode(&listing)
+	if err != nil {
+		return models.Listing{}, err
+	}
+	return listing, nil
+}
+
+func (db *ListingsDatabase) Insert(listing models.Listing) (primitive.ObjectID, error) {
+	result, err := db.collection.InsertOne(context.TODO(), listing)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	return result.InsertedID.(primitive.ObjectID), nil
+}
+
+func (db *ListingsDatabase) Update(id primitive.ObjectID, listing models.Listing) (int64, error) {
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": listing}
+	result, err := db.collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
+
+func (db *ListingsDatabase) Delete(id primitive.ObjectID) (int64, error) {
+	filter := bson.M{"_id": id}
+	result, err := db.collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return 0, err
+	}
+	return result.DeletedCount, nil
+}
