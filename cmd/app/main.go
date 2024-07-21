@@ -16,13 +16,21 @@ var listingsService *services.ListingsService
 var usersService *services.UsersService
 
 func main() {
-	client, db, err := database.Connect("mongodb://localhost:27017", "mydb")
+	// -- Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+        log.Fatalf("Error loading .env file: %v", err)
+    }
+	 -- Load configuration from environment variables
+	cfg := config.LoadFromEnv()
+
+	// -- connect to database
+	client, db, err := database.Connect(cfg.MongoDBURI, cfg.MongoDBName)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer client.Disconnect(context.Background())
+	// defer client.Disconnect(context.Background())
 
 	listingsDB := database.NewListingsDatabase(db)
 	usersDB := database.NewUsersDatabase(db)
@@ -30,18 +38,24 @@ func main() {
 	listingsService = services.NewListingsService(listingsDB)
 	usersService = services.NewUsersService(usersDB)
 
-	// -- setup routes
-	router := mux.NewRouter()
-	router.HandleFunc("/listings", getListings).Methods("GET")
-	router.HandleFunc("/users", getUsers).Methods("GET")
-	router.HandleFunc("/listings", insertListing).Methods("POST")
-	router.HandleFunc("/listings/{id}", updateListing).Methods("PUT")
-	router.HandleFunc("/listings/{id}", deleteListing).Methods("DELETE")
-	router.HandleFunc("/listings/{id}", getListingByID).Methods("GET")
+	handlers.SetServices(listingsService, usersService)
 
-	fmt.Println("Starting server at port 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		panic(err)
-	}
+	// Setup routes
+    router := mux.NewRouter()
+    router.HandleFunc("/listings", handlers.GetListings).Methods("GET")
+    router.HandleFunc("/users", handlers.GetUsers).Methods("GET")
+    router.HandleFunc("/listings", handlers.InsertListing).Methods("POST")
+    router.HandleFunc("/listings/{id}", handlers.UpdateListing).Methods("PUT")
+    router.HandleFunc("/listings/{id}", handlers.DeleteListing).Methods("DELETE")
+    router.HandleFunc("/listings/{id}", handlers.GetListingByID).Methods("GET")
+    router.HandleFunc("/users", handlers.InsertUser).Methods("POST")
+    router.HandleFunc("/users/{id}", handlers.UpdateUser).Methods("PUT")
+    router.HandleFunc("/users/{id}", handlers.DeleteUser).Methods("DELETE")
+    router.HandleFunc("/users/{id}", handlers.GetUserByID).Methods("GET")
+
+	log.Println("Starting server at port", cfg.Port)
+    if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
+        log.Fatal(err)
+    }
 
 }
