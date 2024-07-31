@@ -15,6 +15,24 @@ func NewListingsService(db *database.ListingsDatabase) *ListingsService {
 	return &ListingsService{db: db}
 }
 
+func (s *ListingsService) GetPaginatedListings(page, pageSize int) ([]models.Listing, error) {
+    skip := (page - 1) * pageSize
+    cursor, err := s.db.Collection.Find(context.TODO(), bson.M{}, &options.FindOptions{
+        Skip:  &skip,
+        Limit: &pageSize,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    var listings []models.Listing
+    if err = cursor.All(context.TODO(), &listings); err != nil {
+        return nil, err
+    }
+
+    return listings, nil
+}
+
 func (s *ListingsService) GetAllListings() ([]models.Listing, error) {
 	return s.db.GetAll()
 }
